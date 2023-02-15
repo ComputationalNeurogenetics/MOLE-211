@@ -1,0 +1,195 @@
+---
+title: "R markdown notebook of pipeline used in MOLE-211 scRNA exercises"
+output:
+  html_notebook:
+    fig_caption: yes
+    toc: true
+    code_folding: show
+---
+
+```{r Instructions}
+### From below you can find R-code to accomplish each task listed in the course materials, however, please note that aim is not just copy-paste all code as it is, but also to:
+### Understand how to modify parameters of functions
+### Learn to differentiate between R functions and objects, and operations with those.
+
+### For those brave enough you can find next to the title a button to download actual rmd code for this document and learn how to use rmarkdown to generate reports like this
+
+### Please note that this file contains mixture of R-code and something called rmarkdown. For your work in this course you can ignore rmarkdown code as it is just used to form this document and its html version. Rmarkdown code is above this text as well as around each "chunk" of R code below, so any line of form of ```{r }" or ``` are rmarkdown code and R code of the chunk in question is between those lines. That code you can just copy-paste to R prompt.
+```
+
+## 0. Install packages
+```{r Install additional packages, warning=FALSE, error=FALSE}
+### Install needed packages
+install.packages("BiocManager")
+BiocManager::install("Seurat")
+
+### In the end answer "n" to question to update other packages 
+```
+
+## 1. Loading libraries
+```{r Loading libraries}
+library(Seurat)
+```
+
+```{r}
+### 10X sequencing systems provide their own output files which contain already preprocessed data. This means that initial QC on the read level has been done and alignment to the genome has been completed. Also reads have been linked to gene ids. First step is to load this data into R by using convenient Read10X() function. Then this data is transformed into a Seurat object, which is one of the most used and comprehesive libraries for scRNA analysis in R.
+```
+
+## 2.	Reading dataset into R from sequencing machine output files and form Seurat object from it.
+```{r Reading dataset into R ja turn into Seurat object}
+# Please note that path in the following function must point to /data/filtered_feature_bc_matrix folder
+E13vR.data <- Read10X(data.dir = "../data/filtered_feature_bc_matrix")
+E13vR <- CreateSeuratObject(counts = E13vR.data, project = "E13", min.cells = 3, min.features = 200)
+```
+
+```{r}
+### Some additional QC still needs to be done. Like checking how much there is mitochondrial RNA present in each cell. Relying on ready Seurat functions we can calculate this number and add it to the Seurat object.
+```
+
+## 3.	Perform additional QC steps
+### a) Add mitochondrial RNA percentage to QC metrics pool
+```{r Add mitochondrial RNA percentage to QC metrics pool}
+E13vR[["percent.mt"]] <- PercentageFeatureSet(E13vR, pattern = "^mt-")
+```
+
+```{r}
+### Then we can plot few QC values for visual inspection. These three being the most common values to plot. Please note that in these plots each dot is individual cell.
+```
+
+### b) Plot QC values
+```{r Plot QC values}
+E13vR.p1 <- VlnPlot(E13vR, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+E13vR.p1
+```
+
+```{r}
+### Often it is best to look these with human eyes and consider proper levels for filtering. In this case we require number of features per cell to be between 600 and 6700, and mitochondrial RNA percentage per cell to be less than 15. Cells passing these requirements are selected for further analysis. Pay attention also to the fundamental logic of R here, and consider which dataobject is source and in which dataobject filtered data is assigned. 
+
+#SA question 1: What are these values, how would you interpret the results?
+```
+
+### c)	Filter data based on QC values
+```{r c.	Filter data based on QC values}
+E13vR.filt <- subset(E13vR, nFeature_RNA < 6700 & nFeature_RNA > 600 & percent.mt < 15)
+```
+
+```{r}
+### Just sanity check that everything went correctly, replotting QC values of the filtered data.
+```
+
+### d) Plot QC values after filtering
+```{r Plot QC values after filtering}
+E13vR.p2 <-VlnPlot(E13vR.filt, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+E13vR.p2
+```
+
+```{r}
+### Data needs to be normalized which without going into deep mathematics simply means that data is transformed (often log transform) and scaled to diminish problems caused by outliers, batch differences etc... Normalization is VERY complicated topic in its further details, but also very important. Right now you can just rely on Seurat functions to perform normalization with default settings. Please pay attention to which object is normalized and where its results are assigned.
+```
+
+## 4. Normalize data
+```{r Normalize data}
+E13vR.filt <- NormalizeData(E13vR.filt)
+```
+
+```{r}
+### Seurat objects also store information about variable features, which in this case means genes, as this data has been processed to the level of genes. One needs to set number of variable features via argument and then there is ready function to find that many most variable features and store that into object structure. It is then used further downstream in the analysis. As last command we just print out top 10 genes having most variance in expression among the cells of this sample.
+```
+
+## 5.	Find variable features
+```{r Find variable features}
+E13vR.filt <- FindVariableFeatures(E13vR.filt, selection.method = "vst", nfeatures = 2000)
+E13vR.filt.top10<- head(VariableFeatures(E13vR.filt), 10)
+E13vR.filt.top10
+```
+
+```{r}
+### Naturally these features are also perhaps the first biologically interesting result, as those are the genes which do have most variance in their expression within measured pool of cells. We can plot these for further consideration and validation that sample seems to be biologically valid for this context.
+```
+
+### a) Plot variable features
+```{r Plot variable features}
+E13vR.p3 <- VariableFeaturePlot(E13vR.filt)
+E13vR.p4 <- LabelPoints(plot = E13vR.p3, points = E13vR.filt.top10, repel = TRUE, ynudge=0, xnudge=0)
+E13vR.p4
+```
+
+```{r}
+### SA question 2: What are these features (=genes)? What do they represent?
+```
+
+## 6.	Scale data
+```{r}
+### Scaling of the data goes into the same category as normalization, it is more mathematical topic, but also important step. It is actually required by many downstream Seurat functions.
+```
+
+```{r Scale data}
+all.genes <- rownames(E13vR.filt)
+E13vR.filt <- ScaleData(E13vR.filt, features = all.genes, verbose = FALSE)
+```
+
+## 7.	Preprocess for dimension reduction
+
+```{r}
+### Next step is to reduce the dimensionality of your data, this is almost compulsary as without it is really hard to get interpretable results of the entire data space. This is very mathematical topic, but right now you can perform this as well with ready Seurat function. Please note that this function does now use Variable featuers information you calculated earlier.
+```
+
+```{r Dimension reduction with PCA}
+E13vR.filt  <- RunPCA(E13vR.filt, features = VariableFeatures(object = E13vR.filt), verbose = FALSE)
+```
+
+## 8.	Plot Std vs PC components
+```{r Plot Std vs PC components}
+# Calculated and you are free to look at the plot, but it is not part of the exercise as such
+E13vR.p5 <- ElbowPlot(E13vR.filt, ndims = 30)
+```
+
+## 9.	Find clusters of cells within the reduced dimensional space
+```{r Find clusters of cells withint the reduced dimensional space}
+E13vR.filt <- FindNeighbors(E13vR.filt, dims = 1:14)
+E13vR.filt <- FindClusters(E13vR.filt, resolution = 1)
+```
+
+```{r}
+### Uniform Manifold Approximation Projection (UMAP) is perhaps the most useful functional and method in scRNA data-analysis, and in many other analyses as well. It is also mathematically extremely complex and far beyond the context of this course. Anyhow, Seurat contains nice functionality to perform UMAP. What it actually does, is that it takes your high-dimensional data, and figures out best possible approximation of it in 2 dimensions (=> like scatter plot). Therefore something we can plot in two dimension.
+
+# SA Question 3: Clusters of cells based on what?
+```
+
+## 10.	Run Uniform Manifold Approximation Projection (=UMAP)
+```{r Run UMAP}
+E13vR.filt <- RunUMAP(E13vR.filt, dims = 1:14)
+```
+
+```{r}
+### It is very common task in single cell sequencing to draw UMAP as first analysis. It gives perhaps the best overview of the sample structure and overall variability between the cells. One can also use previous analysis which found clusters of cells and project cluster membership information into the UMAP. In this case cells are colored based on their cluster.
+```
+
+## 11.	Plot UMAP results
+```{r Plot UMAP results per cluster}
+E13vR.p5 <- DimPlot(E13vR.filt, label = TRUE)
+E13vR.p5
+```
+
+```{r}
+# SA Question 4: How do you interpret this plot? Consider it carefully as this is one of the most important results of many sc-sequencing data analyses.
+```
+
+```{r}
+### UMAP is also useful for projecting any quantitative or qualitative information of cells as color on the UMAP. Thus in next code we check how certain key neuronal genes are expressed in each cell. Perhaps these already start to give you understanding which clusters contain which kind of cells.
+```
+
+### 12. Expression of some key neuronal genes as colored overlay
+```{r UMAP with expression of some key neuronal genes overlayed}
+FeaturePlot(E13vR.filt, features = c("Tal1", "Vsx2", "Ccnb2"), cols = c("lightgrey", "green"))
+```
+
+### 13. Finding cluster of Serotonergic cells?
+```{r}
+### SA Question 5: If one know any specific marker gene for interesting cells, that can be used to find which cluster contains those. Can you find cluster number for serotonergic cells by using gene named Fev as marker?
+```
+
+```{r}
+sessionInfo()
+```
+
