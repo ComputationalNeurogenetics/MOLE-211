@@ -8,13 +8,23 @@ output:
 ---
 
 ```{r Instructions}
-### From below you can find R-code to accomplish each task listed in the course materials, however, please note that aim is not just copy-paste all code as it is, but also to:
-### Understand how to modify parameters of functions
-### Learn to differentiate between R functions and objects, and operations with those.
+### Tässä tiedostossa on tarvittava koodi MOLE-211 kurssin scRNA harjoitustöihin.
 
-### For those brave enough you can find next to the title a button to download actual rmd code for this document and learn how to use rmarkdown to generate reports like this
+### Harjoituksissa lähdetään yhdestä hiiren alkion (E13.5) taka-aivojen alueen (rhombomere 1) scRNA sekvensointi näytteen tuloksesta. Sekvensointi data löytyy Puhdista kansiosta /bioinfo/scRNA-seq/. Tavoitteena on piirtää näytteestä solutason hajotelma UMAP algoritmilla sekä katsoa muutamien markkeri geenien ilmentymistä soluissa.
 
-### Please note that this file contains mixture of R-code and something called rmarkdown. For your work in this course you can ignore rmarkdown code as it is just used to form this document and its html version. Rmarkdown code is above this text as well as around each "chunk" of R code below, so any line of form of ```{r }" or ``` are rmarkdown code and R code of the chunk in question is between those lines. That code you can just copy-paste to R prompt.
+### Hae datapaketti Puhdilta, ja pura zip-tiedosto. Huomioi että siitä syntyy kansiot data/filtered_feature_bc_matrix/ ja sen sisällä on 3 gz-pakettia. ÄLÄ PURA NÄITÄ, R:n monet paketit osaavat lukea suoraan pakattua dataa.
+
+### Harjoitus on tarkoitus tehdä R-Studiolla ja se vaatii yhden ylimääräisen paketin (Seurat) sekä sen riippuvuudet. Ohjeet asennukseen on annettu alla, eli ensin asennetaan BiocManager ja sitten Seurat.
+
+### Tässä tiedostossa koodin joukossa on selityksiä vaiheista sekä myös kysymyksiä merkattuna lyhenteellä SA (=SelfAssesment). Voit käyttää niitä arvioidaksesi oletko sisäistänyt keskeisimmät asiat.
+
+### Voit tehdä harjoituksen useammalla eri tavalla.
+
+### 1. Kopioida komennot html tiedostosta R Studion promptiin ja ajaa siinä.
+### 2. Kopioida komennot html tiedostosta R-scripti tiedostoon ja ajaa se.
+### 3. Avata MOLE211_scRNA_pipeline.Rmd (löytyy Moodlesta olevan Github linkin takaa) ja ajaa R koodi siellä osa kerrallaan.
+
+### Valitse näistä oman R osaamisen suhteen, 1 on yksinkertaisin ja helpoin tapa aloittaa aivan alusta R:n kanssa työskentely. 3 on vaativin, älä valitse tätä jos et tiedä mikä on Github, mutta loppujen lopuksi myös antoisin ja hyödyllisin tapa oppia R-Studion käyttöä. Varsinaisen analyysin tuloksen kannalta ei ole väliä minkä tavan valitset.
 ```
 
 ## 0. Install packages
@@ -179,12 +189,12 @@ E13vR.p5
 ### UMAP is also useful for projecting any quantitative or qualitative information of cells as color on the UMAP. Thus in next code we check how certain key neuronal genes are expressed in each cell. Perhaps these already start to give you understanding which clusters contain which kind of cells.
 ```
 
-### 12. Expression of some key neuronal genes as colored overlay
+## 12. Expression of some key neuronal genes as colored overlay
 ```{r UMAP with expression of some key neuronal genes overlayed}
 FeaturePlot(E13vR.filt, features = c("Tal1", "Vsx2", "Ccnb2"), cols = c("lightgrey", "green"))
 ```
 
-### 13. Finding cluster of Serotonergic cells?
+## 13. Finding cluster of Serotonergic cells?
 ```{r}
 ### SA Question 5: If one know any specific marker gene for interesting cells, that can be used to find which cluster contains those. Can you find cluster number for serotonergic cells by using gene named Fev as marker?
 ```
