@@ -10,9 +10,9 @@ output:
 ```{r Instructions}
 ### Tässä tiedostossa on tarvittava koodi MOLE-211 kurssin scRNA harjoitustöihin.
 
-### Harjoituksissa lähdetään yhdestä hiiren alkion (E13.5) taka-aivojen alueen (rhombomere 1) scRNA sekvensointi näytteen tuloksesta. Sekvensointi data löytyy Puhdista kansiosta /bioinfo/scRNA-seq/. Tavoitteena on piirtää näytteestä solutason hajotelma UMAP algoritmilla sekä katsoa muutamien markkeri geenien ilmentymistä soluissa.
+### Harjoituksissa lähdetään yhdestä hiiren alkion (E13.5) taka-aivojen alueen (rhombomere 1) scRNA sekvensointi näytteen tuloksesta. Sekvensointi data löytyy Puhdista kansiosta /scratch/project_2000924/data.zip. Tavoitteena on piirtää näytteestä solutason hajotelma UMAP algoritmilla sekä katsoa muutamien markkeri geenien ilmentymistä soluissa.
 
-### Hae datapaketti Puhdilta, ja pura zip-tiedosto. Huomioi että siitä syntyy kansiot data/filtered_feature_bc_matrix/ ja sen sisällä on 3 gz-pakettia. ÄLÄ PURA NÄITÄ, R:n monet paketit osaavat lukea suoraan pakattua dataa.
+### Hae datapaketti Puhdilta, ja pura zip-tiedosto. Huomioi että siitä syntyy kansio /data/filtered_feature_bc_matrix/ ja sen sisällä on 3 gz-pakettia. ÄLÄ PURA NÄITÄ, R:n monet paketit osaavat lukea suoraan pakattua dataa.
 
 ### Harjoitus on tarkoitus tehdä R-Studiolla ja se vaatii yhden ylimääräisen paketin (Seurat) sekä sen riippuvuudet. Ohjeet asennukseen on annettu alla, eli ensin asennetaan BiocManager ja sitten Seurat.
 
